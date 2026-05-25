@@ -295,10 +295,8 @@ fun CalculatorInputCard(
                 TextField(
                     value = value,
                     onValueChange = { newValue ->
-                        // Only allow decimals and digits, at most 12 chars and at most one decimal separator
-                        if (newValue.length <= 12 && newValue.count { it == '.' || it == ',' } <= 1 && newValue.all { it.isDigit() || it == '.' || it == ',' }) {
-                            onValueChange(newValue)
-                        }
+                        // Accept the typed value directly to prevent IME desynchronization and crashes
+                        onValueChange(newValue)
                     },
                     modifier = Modifier.weight(1f),
                     placeholder = {
@@ -387,10 +385,8 @@ fun DimensionInputField(
         OutlinedTextField(
             value = value,
             onValueChange = { newValue ->
-                // Only allow decimals and digits, at most 12 chars and at most one decimal dot
-                if (newValue.length <= 12 && newValue.count { it == '.' } <= 1 && newValue.all { it.isDigit() || it == '.' }) {
-                    onValueChange(newValue)
-                }
+                // Accept the typed value directly to prevent IME desynchronization and crashes
+                onValueChange(newValue)
             },
             placeholder = { Text("0", fontSize = 14.sp) },
             singleLine = true,

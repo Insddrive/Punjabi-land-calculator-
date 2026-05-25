@@ -62,8 +62,9 @@ class LandCalculatorViewModel : ViewModel() {
     }
 
     private fun parseInput(input: String): Double? {
-        if (input.isBlank()) return null
-        return input.replace(",", "").toDoubleOrNull()
+        val trimmed = input.trim()
+        if (trimmed.isBlank()) return null
+        return trimmed.replace(",", "").toDoubleOrNull()
     }
 
     // ==========================================
