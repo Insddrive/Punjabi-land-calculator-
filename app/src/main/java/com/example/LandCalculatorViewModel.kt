@@ -476,18 +476,15 @@ class LandCalculatorViewModel : ViewModel() {
     }
 
     fun onUrbanTriangleChange(a: String, b: String, c: String, unit: String = uTriUnit) {
-        val cleanA = sanitizeInput(a)
-        val cleanB = sanitizeInput(b)
-        val cleanC = sanitizeInput(c)
-        uTriA = cleanA
-        uTriB = cleanB
-        uTriC = cleanC
+        uTriA = a
+        uTriB = b
+        uTriC = c
         uTriUnit = unit
         clearUrbanDimensions(exclude = "triangle")
 
-        val sideA = parseInput(cleanA)
-        val sideB = parseInput(cleanB)
-        val sideC = parseInput(cleanC)
+        val sideA = parseInput(a)
+        val sideB = parseInput(b)
+        val sideC = parseInput(c)
 
         if (sideA != null && sideB != null && sideC != null) {
             if (sideA + sideB > sideC && sideA + sideC > sideB && sideB + sideC > sideA) {
