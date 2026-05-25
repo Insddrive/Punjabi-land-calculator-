@@ -34,6 +34,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -74,6 +75,7 @@ class MainActivity : ComponentActivity() {
 fun MainScreen(viewModel: LandCalculatorViewModel) {
     val scrollState = rememberScrollState()
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
     
     // Theme colors
     val isDark = viewModel.isDarkTheme
@@ -138,7 +140,10 @@ fun MainScreen(viewModel: LandCalculatorViewModel) {
             // Tab Switcher Row
             TabSwitcherRow(
                 currentTab = viewModel.currentTab,
-                onTabSelected = { viewModel.currentTab = it },
+                onTabSelected = {
+                    focusManager.clearFocus()
+                    viewModel.currentTab = it
+                },
                 isDark = isDark
             )
             
@@ -295,8 +300,10 @@ fun CalculatorInputCard(
                 TextField(
                     value = value,
                     onValueChange = { newValue ->
-                        // Accept the typed value directly to prevent IME desynchronization and crashes
-                        onValueChange(newValue)
+                        val filtered = newValue.filter { it.isDigit() || it == '.' || it == ',' }
+                        if (filtered.length <= 15) {
+                            onValueChange(filtered)
+                        }
                     },
                     modifier = Modifier.weight(1f),
                     placeholder = {
@@ -385,8 +392,10 @@ fun DimensionInputField(
         OutlinedTextField(
             value = value,
             onValueChange = { newValue ->
-                // Accept the typed value directly to prevent IME desynchronization and crashes
-                onValueChange(newValue)
+                val filtered = newValue.filter { it.isDigit() || it == '.' || it == ',' }
+                if (filtered.length <= 15) {
+                    onValueChange(filtered)
+                }
             },
             placeholder = { Text("0", fontSize = 14.sp) },
             singleLine = true,
