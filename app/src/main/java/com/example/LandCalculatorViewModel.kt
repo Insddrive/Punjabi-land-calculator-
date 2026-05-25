@@ -56,7 +56,7 @@ class LandCalculatorViewModel : ViewModel() {
             String.format(Locale.US, "%.${precision}f", value)
                 .trimEnd('0')
                 .trimEnd('.')
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             ""
         }
     }
@@ -109,27 +109,36 @@ class LandCalculatorViewModel : ViewModel() {
     }
 
     private fun runRuralCalculation(sourceUnit: String, value: String) {
-        clearRuralDimensions(exclude = "")
-        val parsed = parseInput(value)
-        if (parsed == null) {
+        try {
+            clearRuralDimensions(exclude = "")
+            val parsed = parseInput(value)
+            if (parsed == null) {
+                clearAllRuralFields(exclude = sourceUnit)
+                return
+            }
+
+            val inSqFt = when (sourceUnit) {
+                "killa" -> parsed * RuralRates.KILLA
+                "vigha" -> parsed * RuralRates.VIGHA
+                "kanal" -> parsed * RuralRates.KANAL
+                "marla" -> parsed * RuralRates.MARLA
+                "gaj" -> parsed * RuralRates.GAJ
+                "sqFt" -> parsed * RuralRates.SQ_FT
+                "hectare" -> parsed * RuralRates.HECTARE
+                "sqMeter" -> parsed * RuralRates.SQ_METER
+                "sqKm" -> parsed * RuralRates.SQ_KM
+                else -> 0.0
+            }
+
+            if (inSqFt.isNaN() || inSqFt.isInfinite()) {
+                clearAllRuralFields(exclude = sourceUnit)
+                return
+            }
+
+            updateAllRuralFields(inSqFt, exclude = sourceUnit)
+        } catch (t: Throwable) {
             clearAllRuralFields(exclude = sourceUnit)
-            return
         }
-
-        val inSqFt = when (sourceUnit) {
-            "killa" -> parsed * RuralRates.KILLA
-            "vigha" -> parsed * RuralRates.VIGHA
-            "kanal" -> parsed * RuralRates.KANAL
-            "marla" -> parsed * RuralRates.MARLA
-            "gaj" -> parsed * RuralRates.GAJ
-            "sqFt" -> parsed * RuralRates.SQ_FT
-            "hectare" -> parsed * RuralRates.HECTARE
-            "sqMeter" -> parsed * RuralRates.SQ_METER
-            "sqKm" -> parsed * RuralRates.SQ_KM
-            else -> 0.0
-        }
-
-        updateAllRuralFields(inSqFt, exclude = sourceUnit)
     }
 
     private fun updateAllRuralFields(inSqFt: Double, exclude: String) {
@@ -316,28 +325,37 @@ class LandCalculatorViewModel : ViewModel() {
     }
 
     private fun runUrbanCalculation(sourceUnit: String, value: String) {
-        clearUrbanDimensions(exclude = "")
-        val parsed = parseInput(value)
-        if (parsed == null) {
+        try {
+            clearUrbanDimensions(exclude = "")
+            val parsed = parseInput(value)
+            if (parsed == null) {
+                clearAllUrbanFields(exclude = sourceUnit)
+                return
+            }
+
+            val inSqFt = when (sourceUnit) {
+                "killa" -> parsed * UrbanRates.KILLA
+                "vigha" -> parsed * UrbanRates.VIGHA
+                "kanal" -> parsed * UrbanRates.KANAL
+                "marla" -> parsed * UrbanRates.MARLA
+                "gaj" -> parsed * UrbanRates.GAJ
+                "sqFt" -> parsed * UrbanRates.SQ_FT
+                "acre" -> parsed * UrbanRates.ACRE
+                "hectare" -> parsed * UrbanRates.HECTARE
+                "sqMeter" -> parsed * UrbanRates.SQ_METER
+                "sqKm" -> parsed * UrbanRates.SQ_KM
+                else -> 0.0
+            }
+
+            if (inSqFt.isNaN() || inSqFt.isInfinite()) {
+                clearAllUrbanFields(exclude = sourceUnit)
+                return
+            }
+
+            updateAllUrbanFields(inSqFt, exclude = sourceUnit)
+        } catch (t: Throwable) {
             clearAllUrbanFields(exclude = sourceUnit)
-            return
         }
-
-        val inSqFt = when (sourceUnit) {
-            "killa" -> parsed * UrbanRates.KILLA
-            "vigha" -> parsed * UrbanRates.VIGHA
-            "kanal" -> parsed * UrbanRates.KANAL
-            "marla" -> parsed * UrbanRates.MARLA
-            "gaj" -> parsed * UrbanRates.GAJ
-            "sqFt" -> parsed * UrbanRates.SQ_FT
-            "acre" -> parsed * UrbanRates.ACRE
-            "hectare" -> parsed * UrbanRates.HECTARE
-            "sqMeter" -> parsed * UrbanRates.SQ_METER
-            "sqKm" -> parsed * UrbanRates.SQ_KM
-            else -> 0.0
-        }
-
-        updateAllUrbanFields(inSqFt, exclude = sourceUnit)
     }
 
     private fun updateAllUrbanFields(inSqFt: Double, exclude: String) {
@@ -508,10 +526,10 @@ class LandCalculatorViewModel : ViewModel() {
         }
         val valDouble = parseInput(raw) ?: return ""
         return try {
-            val format = NumberFormat.getCurrencyInstance(Locale("en", "IN"))
+            val format = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("en-IN"))
             format.maximumFractionDigits = 2
             format.format(valDouble)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             ""
         }
     }
@@ -531,27 +549,35 @@ class LandCalculatorViewModel : ViewModel() {
     }
 
     private fun runPriceCalculation(sourceUnit: String, value: String) {
-        val parsed = parseInput(value)
-        if (parsed == null) {
+        try {
+            val parsed = parseInput(value)
+            if (parsed == null) {
+                clearAllPriceFields(exclude = sourceUnit)
+                return
+            }
+
+            // Get RuralRates factor for sourceUnit
+            val factor = when (sourceUnit) {
+                "killa" -> RuralRates.KILLA
+                "vigha" -> RuralRates.VIGHA
+                "kanal" -> RuralRates.KANAL
+                "marla" -> RuralRates.MARLA
+                "gaj" -> RuralRates.GAJ
+                "sqFt" -> RuralRates.SQ_FT
+                "sqMeter" -> RuralRates.SQ_METER
+                "sqKm" -> RuralRates.SQ_KM
+                else -> 1.0
+            }
+
+            val pricePerSqFt = parsed / factor
+            if (pricePerSqFt.isNaN() || pricePerSqFt.isInfinite()) {
+                clearAllPriceFields(exclude = sourceUnit)
+                return
+            }
+            updateAllPriceFields(pricePerSqFt, exclude = sourceUnit)
+        } catch (t: Throwable) {
             clearAllPriceFields(exclude = sourceUnit)
-            return
         }
-
-        // Get RuralRates factor for sourceUnit
-        val factor = when (sourceUnit) {
-            "killa" -> RuralRates.KILLA
-            "vigha" -> RuralRates.VIGHA
-            "kanal" -> RuralRates.KANAL
-            "marla" -> RuralRates.MARLA
-            "gaj" -> RuralRates.GAJ
-            "sqFt" -> RuralRates.SQ_FT
-            "sqMeter" -> RuralRates.SQ_METER
-            "sqKm" -> RuralRates.SQ_KM
-            else -> 1.0
-        }
-
-        val pricePerSqFt = parsed / factor
-        updateAllPriceFields(pricePerSqFt, exclude = sourceUnit)
     }
 
     private fun updateAllPriceFields(pricePerSqFt: Double, exclude: String) {
@@ -604,30 +630,43 @@ class LandCalculatorViewModel : ViewModel() {
     }
 
     private fun calculateDivision() {
-        val k = parseInput(divKilla) ?: 0.0
-        val kn = parseInput(divKanal) ?: 0.0
-        val m = parseInput(divMarla) ?: 0.0
-        val people = parseInput(divPeople) ?: 1.0
+        try {
+            val k = parseInput(divKilla) ?: 0.0
+            val kn = parseInput(divKanal) ?: 0.0
+            val m = parseInput(divMarla) ?: 0.0
+            val people = parseInput(divPeople) ?: 1.0
 
-        if (people <= 0.0) {
+            if (people <= 0.0) {
+                shareKilla = "0"
+                shareKanal = "0"
+                shareMarla = "0"
+                return
+            }
+
+            // Convert everything to Marlas for calculation: 1 Killa = 160 Marlas, 1 Kanal = 20 Marlas
+            val totalMarlas = (k * 160.0) + (kn * 20.0) + m
+            val shareMarlas = totalMarlas / people
+
+            if (shareMarlas.isNaN() || shareMarlas.isInfinite()) {
+                shareKilla = "0"
+                shareKanal = "0"
+                shareMarla = "0"
+                return
+            }
+
+            val resKilla = (shareMarlas / 160.0).toInt()
+            val remainderAfterKilla = shareMarlas % 160.0
+            val resKanal = (remainderAfterKilla / 20.0).toInt()
+            val resMarla = remainderAfterKilla % 20.0
+
+            shareKilla = resKilla.toString()
+            shareKanal = resKanal.toString()
+            shareMarla = formatDouble(resMarla, 2).ifBlank { "0" }
+        } catch (t: Throwable) {
             shareKilla = "0"
             shareKanal = "0"
             shareMarla = "0"
-            return
         }
-
-        // Convert everything to Marlas for calculation: 1 Killa = 160 Marlas, 1 Kanal = 20 Marlas
-        val totalMarlas = (k * 160.0) + (kn * 20.0) + m
-        val shareMarlas = totalMarlas / people
-
-        val resKilla = (shareMarlas / 160.0).toInt()
-        val remainderAfterKilla = shareMarlas % 160.0
-        val resKanal = (remainderAfterKilla / 20.0).toInt()
-        val resMarla = remainderAfterKilla % 20.0
-
-        shareKilla = resKilla.toString()
-        shareKanal = resKanal.toString()
-        shareMarla = formatDouble(resMarla, 2).ifBlank { "0" }
     }
 
     fun resetDivider() {

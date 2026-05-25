@@ -295,8 +295,8 @@ fun CalculatorInputCard(
                 TextField(
                     value = value,
                     onValueChange = { newValue ->
-                        // Only allow decimals and digits
-                        if (newValue.all { it.isDigit() || it == '.' || it == ',' }) {
+                        // Only allow decimals and digits, at most 12 chars and at most one decimal separator
+                        if (newValue.length <= 12 && newValue.count { it == '.' || it == ',' } <= 1 && newValue.all { it.isDigit() || it == '.' || it == ',' }) {
                             onValueChange(newValue)
                         }
                     },
@@ -387,7 +387,8 @@ fun DimensionInputField(
         OutlinedTextField(
             value = value,
             onValueChange = { newValue ->
-                if (newValue.all { it.isDigit() || it == '.' }) {
+                // Only allow decimals and digits, at most 12 chars and at most one decimal dot
+                if (newValue.length <= 12 && newValue.count { it == '.' } <= 1 && newValue.all { it.isDigit() || it == '.' }) {
                     onValueChange(newValue)
                 }
             },
@@ -1736,7 +1737,7 @@ fun CreatorProfileCard(isDark: Boolean) {
                             data = Uri.parse("tel:9464491806")
                         }
                         context.startActivity(dialIntent)
-                    } catch (e: Exception) {
+                    } catch (e: Throwable) {
                         // fallback
                     }
                 },
