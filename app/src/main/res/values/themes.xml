@@ -2,7 +2,7 @@
 <resources>
 
     <style name="Theme.MyApplication" parent="android:Theme.DeviceDefault.NoActionBar">
-        <!-- Disable early window previews to launch directly and immediately into custom Compose UI -->
-        <item name="android:windowDisablePreview">true</item>
+        <!-- Enable instant native starting window preview with the app logo to make launch ultra-fast and responsive -->
+        <item name="android:windowDisablePreview">false</item>
     </style>
 </resources>

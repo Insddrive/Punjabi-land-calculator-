@@ -300,8 +300,11 @@ fun CalculatorInputCard(
                 TextField(
                     value = value,
                     onValueChange = { newValue ->
-                        // Accept the typed value directly to prevent IME desynchronization and crashes
-                        onValueChange(newValue)
+                        // Filter to keep only valid numeric characters and limit size to 15 to prevent freezes/ANRs
+                        val filtered = newValue.filter { it.isDigit() || it == '.' || it == ',' }
+                        if (filtered.length <= 15) {
+                            onValueChange(filtered)
+                        }
                     },
                     modifier = Modifier.weight(1f),
                     placeholder = {
@@ -390,8 +393,11 @@ fun DimensionInputField(
         OutlinedTextField(
             value = value,
             onValueChange = { newValue ->
-                // Accept the typed value directly to prevent IME desynchronization and crashes
-                onValueChange(newValue)
+                // Filter to keep only valid numeric characters and limit size to 15 to prevent freezes/ANRs
+                val filtered = newValue.filter { it.isDigit() || it == '.' || it == ',' }
+                if (filtered.length <= 15) {
+                    onValueChange(filtered)
+                }
             },
             placeholder = { Text("0", fontSize = 14.sp) },
             singleLine = true,
