@@ -1,0 +1,638 @@
+package com.example
+
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.ViewModel
+import java.text.NumberFormat
+import java.util.Locale
+import kotlin.math.sqrt
+
+enum class AppTab {
+    RURAL_AREA, URBAN_AREA, PRICE, DIVIDER
+}
+
+class LandCalculatorViewModel : ViewModel() {
+
+    // Theme state
+    var isDarkTheme by mutableStateOf(false)
+
+    // Current selected Tab
+    var currentTab by mutableStateOf(AppTab.RURAL_AREA)
+
+    // Rates structure
+    object RuralRates {
+        const val KILLA = 43560.0
+        const val VIGHA = 10890.0
+        const val KANAL = 5445.0
+        const val MARLA = 272.25
+        const val GAJ = 9.0
+        const val SQ_FT = 1.0
+        const val HECTARE = 107639.1042
+        const val SQ_METER = 10.7639
+        const val SQ_KM = 10763910.42
+        const val SQ_KARAM = 30.25
+    }
+
+    object UrbanRates {
+        const val KILLA = 36000.0 // 160 * 225
+        const val VIGHA = 9000.0 // 40 * 225
+        const val KANAL = 4500.0 // 20 * 225
+        const val MARLA = 225.0
+        const val GAJ = 9.0
+        const val SQ_FT = 1.0
+        const val ACRE = 43560.0
+        const val HECTARE = 107639.1042
+        const val SQ_METER = 10.7639
+        const val SQ_KM = 10763910.42
+    }
+
+    private val meterToFeet = 3.28084
+
+    // Helper to format float values
+    fun formatDouble(value: Double, precision: Int): String {
+        if (value.isNaN() || value.isInfinite() || value == 0.0) return ""
+        return String.format(Locale.US, "%.${precision}f", value)
+            .trimEnd('0')
+            .trimEnd('.')
+    }
+
+    private fun parseInput(input: String): Double? {
+        if (input.isBlank()) return null
+        return input.replace(",", "").toDoubleOrNull()
+    }
+
+    // ==========================================
+    // RURAL STATE VARIABLES
+    // ==========================================
+    var rKilla by mutableStateOf("")
+    var rVigha by mutableStateOf("")
+    var rKanal by mutableStateOf("")
+    var rMarla by mutableStateOf("")
+    var rGaj by mutableStateOf("")
+    var rSqFt by mutableStateOf("")
+    var rHectare by mutableStateOf("")
+    var rSqMeter by mutableStateOf("")
+    var rSqKm by mutableStateOf("")
+
+    // Rural dimension state
+    var rFeetLength by mutableStateOf("")
+    var rFeetWidth by mutableStateOf("")
+    var rMeterLength by mutableStateOf("")
+    var rMeterWidth by mutableStateOf("")
+    var rKaramLength by mutableStateOf("")
+    var rKaramWidth by mutableStateOf("")
+
+    // Rural triangle
+    var rTriA by mutableStateOf("")
+    var rTriB by mutableStateOf("")
+    var rTriC by mutableStateOf("")
+    var rTriUnit by mutableStateOf("feet") // "feet", "meters", "karams"
+    var rTriError by mutableStateOf(false)
+
+    fun onRuralValueChange(unit: String, value: String) {
+        when (unit) {
+            "killa" -> { rKilla = value; runRuralCalculation("killa", value) }
+            "vigha" -> { rVigha = value; runRuralCalculation("vigha", value) }
+            "kanal" -> { rKanal = value; runRuralCalculation("kanal", value) }
+            "marla" -> { rMarla = value; runRuralCalculation("marla", value) }
+            "gaj" -> { rGaj = value; runRuralCalculation("gaj", value) }
+            "sqFt" -> { rSqFt = value; runRuralCalculation("sqFt", value) }
+            "hectare" -> { rHectare = value; runRuralCalculation("hectare", value) }
+            "sqMeter" -> { rSqMeter = value; runRuralCalculation("sqMeter", value) }
+            "sqKm" -> { rSqKm = value; runRuralCalculation("sqKm", value) }
+        }
+    }
+
+    private fun runRuralCalculation(sourceUnit: String, value: String) {
+        clearRuralDimensions(exclude = "")
+        val parsed = parseInput(value)
+        if (parsed == null) {
+            clearAllRuralFields(exclude = sourceUnit)
+            return
+        }
+
+        val inSqFt = when (sourceUnit) {
+            "killa" -> parsed * RuralRates.KILLA
+            "vigha" -> parsed * RuralRates.VIGHA
+            "kanal" -> parsed * RuralRates.KANAL
+            "marla" -> parsed * RuralRates.MARLA
+            "gaj" -> parsed * RuralRates.GAJ
+            "sqFt" -> parsed * RuralRates.SQ_FT
+            "hectare" -> parsed * RuralRates.HECTARE
+            "sqMeter" -> parsed * RuralRates.SQ_METER
+            "sqKm" -> parsed * RuralRates.SQ_KM
+            else -> 0.0
+        }
+
+        updateAllRuralFields(inSqFt, exclude = sourceUnit)
+    }
+
+    private fun updateAllRuralFields(inSqFt: Double, exclude: String) {
+        if (exclude != "killa") rKilla = formatDouble(inSqFt / RuralRates.KILLA, 4)
+        if (exclude != "vigha") rVigha = formatDouble(inSqFt / RuralRates.VIGHA, 4)
+        if (exclude != "kanal") rKanal = formatDouble(inSqFt / RuralRates.KANAL, 4)
+        if (exclude != "marla") rMarla = formatDouble(inSqFt / RuralRates.MARLA, 4)
+        if (exclude != "gaj") rGaj = formatDouble(inSqFt / RuralRates.GAJ, 2)
+        if (exclude != "sqFt") rSqFt = formatDouble(inSqFt / RuralRates.SQ_FT, 2)
+        if (exclude != "hectare") rHectare = formatDouble(inSqFt / RuralRates.HECTARE, 5)
+        if (exclude != "sqMeter") rSqMeter = formatDouble(inSqFt / RuralRates.SQ_METER, 2)
+        if (exclude != "sqKm") rSqKm = formatDouble(inSqFt / RuralRates.SQ_KM, 7)
+    }
+
+    private fun clearAllRuralFields(exclude: String) {
+        if (exclude != "killa") rKilla = ""
+        if (exclude != "vigha") rVigha = ""
+        if (exclude != "kanal") rKanal = ""
+        if (exclude != "marla") rMarla = ""
+        if (exclude != "gaj") rGaj = ""
+        if (exclude != "sqFt") rSqFt = ""
+        if (exclude != "hectare") rHectare = ""
+        if (exclude != "sqMeter") rSqMeter = ""
+        if (exclude != "sqKm") rSqKm = ""
+    }
+
+    fun onRuralDimensionChange(dimType: String, lengthVal: String, widthVal: String) {
+        when (dimType) {
+            "feet" -> {
+                rFeetLength = lengthVal
+                rFeetWidth = widthVal
+                val l = parseInput(lengthVal)
+                val w = parseInput(widthVal)
+                if (l != null && w != null) {
+                    val sqFt = l * w
+                    updateAllRuralFields(sqFt, exclude = "")
+                    syncRuralDimensions(l, w, source = "feet")
+                } else {
+                    clearAllRuralFields(exclude = "")
+                    clearRuralDimensions(exclude = "feet")
+                }
+            }
+            "meters" -> {
+                rMeterLength = lengthVal
+                rMeterWidth = widthVal
+                val l = parseInput(lengthVal)
+                val w = parseInput(widthVal)
+                if (l != null && w != null) {
+                    val lF = l * meterToFeet
+                    val wF = w * meterToFeet
+                    val sqFt = lF * wF
+                    updateAllRuralFields(sqFt, exclude = "")
+                    syncRuralDimensions(lF, wF, source = "meters")
+                } else {
+                    clearAllRuralFields(exclude = "")
+                    clearRuralDimensions(exclude = "meters")
+                }
+            }
+            "karams" -> {
+                rKaramLength = lengthVal
+                rKaramWidth = widthVal
+                val l = parseInput(lengthVal)
+                val w = parseInput(widthVal)
+                if (l != null && w != null) {
+                    val lF = l * 5.5
+                    val wF = w * 5.5
+                    val sqFt = lF * wF
+                    updateAllRuralFields(sqFt, exclude = "")
+                    syncRuralDimensions(lF, wF, source = "karams")
+                } else {
+                    clearAllRuralFields(exclude = "")
+                    clearRuralDimensions(exclude = "karams")
+                }
+            }
+        }
+    }
+
+    private fun syncRuralDimensions(lenFeet: Double, widFeet: Double, source: String) {
+        if (source != "feet") {
+            rFeetLength = formatDouble(lenFeet, 2)
+            rFeetWidth = formatDouble(widFeet, 2)
+        }
+        if (source != "karams") {
+            rKaramLength = formatDouble(lenFeet / 5.5, 2)
+            rKaramWidth = formatDouble(widFeet / 5.5, 2)
+        }
+        if (source != "meters") {
+            rMeterLength = formatDouble(lenFeet / meterToFeet, 2)
+            rMeterWidth = formatDouble(widFeet / meterToFeet, 2)
+        }
+    }
+
+    private fun clearRuralDimensions(exclude: String) {
+        if (exclude != "feet") { rFeetLength = ""; rFeetWidth = "" }
+        if (exclude != "meters") { rMeterLength = ""; rMeterWidth = "" }
+        if (exclude != "karams") { rKaramLength = ""; rKaramWidth = "" }
+        if (exclude != "triangle") {
+            rTriA = ""; rTriB = ""; rTriC = ""
+            rTriError = false
+        }
+    }
+
+    fun onRuralTriangleChange(a: String, b: String, c: String, unit: String = rTriUnit) {
+        rTriA = a
+        rTriB = b
+        rTriC = c
+        rTriUnit = unit
+        clearRuralDimensions(exclude = "triangle")
+
+        val sideA = parseInput(a)
+        val sideB = parseInput(b)
+        val sideC = parseInput(c)
+
+        if (sideA != null && sideB != null && sideC != null) {
+            if (sideA + sideB > sideC && sideA + sideC > sideB && sideB + sideC > sideA) {
+                val s = (sideA + sideB + sideC) / 2.0
+                var area = sqrt(s * (s - sideA) * (s - sideB) * (s - sideC))
+
+                if (unit == "meters") {
+                    area *= (meterToFeet * meterToFeet)
+                } else if (unit == "karams") {
+                    area *= RuralRates.SQ_KARAM
+                }
+
+                rTriError = false
+                updateAllRuralFields(area, exclude = "")
+            } else {
+                rTriError = true
+                clearAllRuralFields(exclude = "")
+            }
+        } else {
+            rTriError = false
+            clearAllRuralFields(exclude = "")
+        }
+    }
+
+    fun resetRural() {
+        clearAllRuralFields("")
+        clearRuralDimensions("")
+    }
+
+    // ==========================================
+    // URBAN STATE VARIABLES
+    // ==========================================
+    var uKilla by mutableStateOf("")
+    var uVigha by mutableStateOf("")
+    var uKanal by mutableStateOf("")
+    var uMarla by mutableStateOf("")
+    var uGaj by mutableStateOf("")
+    var uSqFt by mutableStateOf("")
+    var uAcre by mutableStateOf("")
+    var uHectare by mutableStateOf("")
+    var uSqMeter by mutableStateOf("")
+    var uSqKm by mutableStateOf("")
+
+    // Urban dimension state
+    var uFeetLength by mutableStateOf("")
+    var uFeetWidth by mutableStateOf("")
+    var uMeterLength by mutableStateOf("")
+    var uMeterWidth by mutableStateOf("")
+    var uKaramLength by mutableStateOf("")
+    var uKaramWidth by mutableStateOf("")
+
+    // Urban triangle
+    var uTriA by mutableStateOf("")
+    var uTriB by mutableStateOf("")
+    var uTriC by mutableStateOf("")
+    var uTriUnit by mutableStateOf("feet") // "feet", "meters", "karams"
+    var uTriError by mutableStateOf(false)
+
+    fun onUrbanValueChange(unit: String, value: String) {
+        when (unit) {
+            "killa" -> { uKilla = value; runUrbanCalculation("killa", value) }
+            "vigha" -> { uVigha = value; runUrbanCalculation("vigha", value) }
+            "kanal" -> { uKanal = value; runUrbanCalculation("kanal", value) }
+            "marla" -> { uMarla = value; runUrbanCalculation("marla", value) }
+            "gaj" -> { uGaj = value; runUrbanCalculation("gaj", value) }
+            "sqFt" -> { uSqFt = value; runUrbanCalculation("sqFt", value) }
+            "acre" -> { uAcre = value; runUrbanCalculation("acre", value) }
+            "hectare" -> { uHectare = value; runUrbanCalculation("hectare", value) }
+            "sqMeter" -> { uSqMeter = value; runUrbanCalculation("sqMeter", value) }
+            "sqKm" -> { uSqKm = value; runUrbanCalculation("sqKm", value) }
+        }
+    }
+
+    private fun runUrbanCalculation(sourceUnit: String, value: String) {
+        clearUrbanDimensions(exclude = "")
+        val parsed = parseInput(value)
+        if (parsed == null) {
+            clearAllUrbanFields(exclude = sourceUnit)
+            return
+        }
+
+        val inSqFt = when (sourceUnit) {
+            "killa" -> parsed * UrbanRates.KILLA
+            "vigha" -> parsed * UrbanRates.VIGHA
+            "kanal" -> parsed * UrbanRates.KANAL
+            "marla" -> parsed * UrbanRates.MARLA
+            "gaj" -> parsed * UrbanRates.GAJ
+            "sqFt" -> parsed * UrbanRates.SQ_FT
+            "acre" -> parsed * UrbanRates.ACRE
+            "hectare" -> parsed * UrbanRates.HECTARE
+            "sqMeter" -> parsed * UrbanRates.SQ_METER
+            "sqKm" -> parsed * UrbanRates.SQ_KM
+            else -> 0.0
+        }
+
+        updateAllUrbanFields(inSqFt, exclude = sourceUnit)
+    }
+
+    private fun updateAllUrbanFields(inSqFt: Double, exclude: String) {
+        if (exclude != "killa") uKilla = formatDouble(inSqFt / UrbanRates.KILLA, 4)
+        if (exclude != "vigha") uVigha = formatDouble(inSqFt / UrbanRates.VIGHA, 4)
+        if (exclude != "kanal") uKanal = formatDouble(inSqFt / UrbanRates.KANAL, 4)
+        if (exclude != "marla") uMarla = formatDouble(inSqFt / UrbanRates.MARLA, 4)
+        if (exclude != "gaj") uGaj = formatDouble(inSqFt / UrbanRates.GAJ, 2)
+        if (exclude != "sqFt") uSqFt = formatDouble(inSqFt / UrbanRates.SQ_FT, 2)
+        if (exclude != "acre") uAcre = formatDouble(inSqFt / UrbanRates.ACRE, 4)
+        if (exclude != "hectare") uHectare = formatDouble(inSqFt / UrbanRates.HECTARE, 5)
+        if (exclude != "sqMeter") uSqMeter = formatDouble(inSqFt / UrbanRates.SQ_METER, 2)
+        if (exclude != "sqKm") uSqKm = formatDouble(inSqFt / UrbanRates.SQ_KM, 7)
+    }
+
+    private fun clearAllUrbanFields(exclude: String) {
+        if (exclude != "killa") uKilla = ""
+        if (exclude != "vigha") uVigha = ""
+        if (exclude != "kanal") uKanal = ""
+        if (exclude != "marla") uMarla = ""
+        if (exclude != "gaj") uGaj = ""
+        if (exclude != "sqFt") uSqFt = ""
+        if (exclude != "acre") uAcre = ""
+        if (exclude != "hectare") uHectare = ""
+        if (exclude != "sqMeter") uSqMeter = ""
+        if (exclude != "sqKm") uSqKm = ""
+    }
+
+    fun onUrbanDimensionChange(dimType: String, lengthVal: String, widthVal: String) {
+        when (dimType) {
+            "feet" -> {
+                uFeetLength = lengthVal
+                uFeetWidth = widthVal
+                val l = parseInput(lengthVal)
+                val w = parseInput(widthVal)
+                if (l != null && w != null) {
+                    val sqFt = l * w
+                    updateAllUrbanFields(sqFt, exclude = "")
+                    syncUrbanDimensions(l, w, source = "feet")
+                } else {
+                    clearAllUrbanFields(exclude = "")
+                    clearUrbanDimensions(exclude = "feet")
+                }
+            }
+            "meters" -> {
+                uMeterLength = lengthVal
+                uMeterWidth = widthVal
+                val l = parseInput(lengthVal)
+                val w = parseInput(widthVal)
+                if (l != null && w != null) {
+                    val lF = l * meterToFeet
+                    val wF = w * meterToFeet
+                    val sqFt = lF * wF
+                    updateAllUrbanFields(sqFt, exclude = "")
+                    syncUrbanDimensions(lF, wF, source = "meters")
+                } else {
+                    clearAllUrbanFields(exclude = "")
+                    clearUrbanDimensions(exclude = "meters")
+                }
+            }
+            "karams" -> {
+                uKaramLength = lengthVal
+                uKaramWidth = widthVal
+                val l = parseInput(lengthVal)
+                val w = parseInput(widthVal)
+                if (l != null && w != null) {
+                    val lF = l * 5.5
+                    val wF = w * 5.5
+                    val sqFt = lF * wF
+                    updateAllUrbanFields(sqFt, exclude = "")
+                    syncUrbanDimensions(lF, wF, source = "karams")
+                } else {
+                    clearAllUrbanFields(exclude = "")
+                    clearUrbanDimensions(exclude = "karams")
+                }
+            }
+        }
+    }
+
+    private fun syncUrbanDimensions(lenFeet: Double, widFeet: Double, source: String) {
+        if (source != "feet") {
+            uFeetLength = formatDouble(lenFeet, 2)
+            uFeetWidth = formatDouble(widFeet, 2)
+        }
+        if (source != "karams") {
+            uKaramLength = formatDouble(lenFeet / 5.5, 2)
+            uKaramWidth = formatDouble(widFeet / 5.5, 2)
+        }
+        if (source != "meters") {
+            uMeterLength = formatDouble(lenFeet / meterToFeet, 2)
+            uMeterWidth = formatDouble(widFeet / meterToFeet, 2)
+        }
+    }
+
+    private fun clearUrbanDimensions(exclude: String) {
+        if (exclude != "feet") { uFeetLength = ""; uFeetWidth = "" }
+        if (exclude != "meters") { uMeterLength = ""; uMeterWidth = "" }
+        if (exclude != "karams") { uKaramLength = ""; uKaramWidth = "" }
+        if (exclude != "triangle") {
+            uTriA = ""; uTriB = ""; uTriC = ""
+            uTriError = false
+        }
+    }
+
+    fun onUrbanTriangleChange(a: String, b: String, c: String, unit: String = uTriUnit) {
+        uTriA = a
+        uTriB = b
+        uTriC = c
+        uTriUnit = unit
+        clearUrbanDimensions(exclude = "triangle")
+
+        val sideA = parseInput(a)
+        val sideB = parseInput(b)
+        val sideC = parseInput(c)
+
+        if (sideA != null && sideB != null && sideC != null) {
+            if (sideA + sideB > sideC && sideA + sideC > sideB && sideB + sideC > sideA) {
+                val s = (sideA + sideB + sideC) / 2.0
+                var area = sqrt(s * (s - sideA) * (s - sideB) * (s - sideC))
+
+                if (unit == "meters") {
+                    area *= (meterToFeet * meterToFeet)
+                } else if (unit == "karams") {
+                    area *= RuralRates.SQ_KARAM
+                }
+
+                uTriError = false
+                updateAllUrbanFields(area, exclude = "")
+            } else {
+                uTriError = true
+                clearAllUrbanFields(exclude = "")
+            }
+        } else {
+            uTriError = false
+            clearAllUrbanFields(exclude = "")
+        }
+    }
+
+    fun resetUrban() {
+        clearAllUrbanFields("")
+        clearUrbanDimensions("")
+    }
+
+    // ==========================================
+    // PRICE STATE VARIABLES
+    // ==========================================
+    var pKilla by mutableStateOf("")
+    var pVigha by mutableStateOf("")
+    var pKanal by mutableStateOf("")
+    var pMarla by mutableStateOf("")
+    var pGaj by mutableStateOf("")
+    var pSqFt by mutableStateOf("")
+    var pSqMeter by mutableStateOf("")
+    var pSqKm by mutableStateOf("")
+
+    // We can also have standard formatted displays
+    fun getFormattedPrice(unit: String): String {
+        val raw = when (unit) {
+            "killa" -> pKilla
+            "vigha" -> pVigha
+            "kanal" -> pKanal
+            "marla" -> pMarla
+            "gaj" -> pGaj
+            "sqFt" -> pSqFt
+            "sqMeter" -> pSqMeter
+            "sqKm" -> pSqKm
+            else -> ""
+        }
+        val valDouble = parseInput(raw) ?: return ""
+        return try {
+            val format = NumberFormat.getCurrencyInstance(Locale("en", "IN"))
+            format.maximumFractionDigits = 2
+            format.format(valDouble)
+        } catch (e: Exception) {
+            ""
+        }
+    }
+
+    fun onPriceValueChange(unit: String, value: String) {
+        when (unit) {
+            "killa" -> pKilla = value
+            "vigha" -> pVigha = value
+            "kanal" -> pKanal = value
+            "marla" -> pMarla = value
+            "gaj" -> pGaj = value
+            "sqFt" -> pSqFt = value
+            "sqMeter" -> pSqMeter = value
+            "sqKm" -> pSqKm = value
+        }
+        runPriceCalculation(unit, value)
+    }
+
+    private fun runPriceCalculation(sourceUnit: String, value: String) {
+        val parsed = parseInput(value)
+        if (parsed == null) {
+            clearAllPriceFields(exclude = sourceUnit)
+            return
+        }
+
+        // Get RuralRates factor for sourceUnit
+        val factor = when (sourceUnit) {
+            "killa" -> RuralRates.KILLA
+            "vigha" -> RuralRates.VIGHA
+            "kanal" -> RuralRates.KANAL
+            "marla" -> RuralRates.MARLA
+            "gaj" -> RuralRates.GAJ
+            "sqFt" -> RuralRates.SQ_FT
+            "sqMeter" -> RuralRates.SQ_METER
+            "sqKm" -> RuralRates.SQ_KM
+            else -> 1.0
+        }
+
+        val pricePerSqFt = parsed / factor
+        updateAllPriceFields(pricePerSqFt, exclude = sourceUnit)
+    }
+
+    private fun updateAllPriceFields(pricePerSqFt: Double, exclude: String) {
+        if (exclude != "killa") pKilla = formatDouble(pricePerSqFt * RuralRates.KILLA, 2)
+        if (exclude != "vigha") pVigha = formatDouble(pricePerSqFt * RuralRates.VIGHA, 2)
+        if (exclude != "kanal") pKanal = formatDouble(pricePerSqFt * RuralRates.KANAL, 2)
+        if (exclude != "marla") pMarla = formatDouble(pricePerSqFt * RuralRates.MARLA, 2)
+        if (exclude != "gaj") pGaj = formatDouble(pricePerSqFt * RuralRates.GAJ, 2)
+        if (exclude != "sqFt") pSqFt = formatDouble(pricePerSqFt * RuralRates.SQ_FT, 2)
+        if (exclude != "sqMeter") pSqMeter = formatDouble(pricePerSqFt * RuralRates.SQ_METER, 2)
+        if (exclude != "sqKm") pSqKm = formatDouble(pricePerSqFt * RuralRates.SQ_KM, 2)
+    }
+
+    private fun clearAllPriceFields(exclude: String) {
+        if (exclude != "killa") pKilla = ""
+        if (exclude != "vigha") pVigha = ""
+        if (exclude != "kanal") pKanal = ""
+        if (exclude != "marla") pMarla = ""
+        if (exclude != "gaj") pGaj = ""
+        if (exclude != "sqFt") pSqFt = ""
+        if (exclude != "sqMeter") pSqMeter = ""
+        if (exclude != "sqKm") pSqKm = ""
+    }
+
+    fun resetPrice() {
+        clearAllPriceFields("")
+    }
+
+    // ==========================================
+    // DIVIDER STATE VARIABLES
+    // ==========================================
+    var divKilla by mutableStateOf("")
+    var divKanal by mutableStateOf("")
+    var divMarla by mutableStateOf("")
+    var divPeople by mutableStateOf("1")
+
+    // Outputs
+    var shareKilla by mutableStateOf("0")
+    var shareKanal by mutableStateOf("0")
+    var shareMarla by mutableStateOf("0")
+
+    fun onDividerChange(field: String, value: String) {
+        when (field) {
+            "killa" -> divKilla = value
+            "kanal" -> divKanal = value
+            "marla" -> divMarla = value
+            "people" -> divPeople = value
+        }
+        calculateDivision()
+    }
+
+    private fun calculateDivision() {
+        val k = parseInput(divKilla) ?: 0.0
+        val kn = parseInput(divKanal) ?: 0.0
+        val m = parseInput(divMarla) ?: 0.0
+        val people = parseInput(divPeople) ?: 1.0
+
+        if (people <= 0.0) {
+            shareKilla = "0"
+            shareKanal = "0"
+            shareMarla = "0"
+            return
+        }
+
+        // Convert everything to Marlas for calculation: 1 Killa = 160 Marlas, 1 Kanal = 20 Marlas
+        val totalMarlas = (k * 160.0) + (kn * 20.0) + m
+        val shareMarlas = totalMarlas / people
+
+        val resKilla = (shareMarlas / 160.0).toInt()
+        val remainderAfterKilla = shareMarlas % 160.0
+        val resKanal = (remainderAfterKilla / 20.0).toInt()
+        val resMarla = remainderAfterKilla % 20.0
+
+        shareKilla = resKilla.toString()
+        shareKanal = resKanal.toString()
+        shareMarla = formatDouble(resMarla, 2).ifBlank { "0" }
+    }
+
+    fun resetDivider() {
+        divKilla = ""
+        divKanal = ""
+        divMarla = ""
+        divPeople = "1"
+        shareKilla = "0"
+        shareKanal = "0"
+        shareMarla = "0"
+    }
+}

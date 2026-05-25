@@ -1,0 +1,6 @@
+{
+  "name": "ਜਮੀਨ ਮਿਣਤੀ",
+  "description": "Punjab Land Area and Cost Calculator (ਜਮੀਨ ਮਿਣਤੀ ਐਪ)",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
