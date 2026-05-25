@@ -48,6 +48,11 @@ import com.example.ui.theme.MyApplicationTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+            android.util.Log.e("LandCalcCrash", "Uncaught Exception in ${thread.name}: ${throwable.message}", throwable)
+            defaultHandler?.uncaughtException(thread, throwable)
+        }
         enableEdgeToEdge()
         setContent {
             val systemViewModel: LandCalculatorViewModel = viewModel()
@@ -291,7 +296,7 @@ fun CalculatorInputCard(
                     value = value,
                     onValueChange = { newValue ->
                         // Only allow decimals and digits
-                        if (newValue.all { it.isDigit() || it == '.' || it == ',' || it == '-' }) {
+                        if (newValue.all { it.isDigit() || it == '.' || it == ',' }) {
                             onValueChange(newValue)
                         }
                     },
@@ -382,7 +387,7 @@ fun DimensionInputField(
         OutlinedTextField(
             value = value,
             onValueChange = { newValue ->
-                if (newValue.all { it.isDigit() || it == '.' || it == '-' }) {
+                if (newValue.all { it.isDigit() || it == '.' }) {
                     onValueChange(newValue)
                 }
             },

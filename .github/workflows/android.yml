@@ -30,18 +30,31 @@ jobs:
         mkdir -p app
         touch app/.env
 
-    - name: Grant Execute Permission for Gradle Wrapper
+    - name: Restore or Generate Debug Keystore
+      run: |
+        if [ -f debug.keystore.base64 ]; then
+          echo "Decoding debug.keystore.base64..."
+          base64 -d debug.keystore.base64 > debug.keystore
+        else
+          echo "debug.keystore.base64 not found, creating a standard debug.keystore..."
+          keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+        fi
+
+    - name: Fix line endings and grant permission for Gradle Wrapper
       run: |
         if [ -f gradlew ]; then
+          # Fix CRLF line endings (Windows carriage returns) if the file was checked in from Windows
+          sed -i -e 's/\r$//' gradlew
           chmod +x gradlew
         else
-          echo "Gradle wrapper not found, setting up gradle..."
+          echo "Gradle wrapper not found, generating locally..."
           gradle wrapper --gradle-version 8.5
+          sed -i -e 's/\r$//' gradlew
           chmod +x gradlew
         fi
 
     - name: Build Debug APK with Gradle
-      run: ./gradlew :app:assembleDebug --stacktrace
+      run: ./gradlew :app:assembleDebug --stacktrace --no-daemon
 
     - name: Upload Build Artifacts (APK)
       uses: actions/upload-artifact@v4
@@ -49,3 +62,4 @@ jobs:
         name: Land-Calculator-Debug-APK
         path: app/build/outputs/apk/debug/app-debug.apk
         if-no-files-found: error
+

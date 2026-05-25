@@ -52,9 +52,13 @@ class LandCalculatorViewModel : ViewModel() {
     // Helper to format float values
     fun formatDouble(value: Double, precision: Int): String {
         if (value.isNaN() || value.isInfinite() || value == 0.0) return ""
-        return String.format(Locale.US, "%.${precision}f", value)
-            .trimEnd('0')
-            .trimEnd('.')
+        return try {
+            String.format(Locale.US, "%.${precision}f", value)
+                .trimEnd('0')
+                .trimEnd('.')
+        } catch (e: Exception) {
+            ""
+        }
     }
 
     private fun parseInput(input: String): Double? {
