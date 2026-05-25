@@ -40,18 +40,13 @@ jobs:
           keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
         fi
 
-    - name: Fix line endings and grant permission for Gradle Wrapper
+    - name: Ensure clean and valid Gradle Wrapper
       run: |
-        if [ -f gradlew ]; then
-          # Fix CRLF line endings (Windows carriage returns) if the file was checked in from Windows
-          sed -i -e 's/\r$//' gradlew
-          chmod +x gradlew
-        else
-          echo "Gradle wrapper not found, generating locally..."
-          gradle wrapper --gradle-version 8.5
-          sed -i -e 's/\r$//' gradlew
-          chmod +x gradlew
-        fi
+        # Avoid Git line-ending / binary corruption by generating a clean wrapper on the VM
+        rm -f gradle/wrapper/gradle-wrapper.jar
+        gradle wrapper --gradle-version 9.3.1 --distribution-type bin
+        sed -i -e 's/\r$//' gradlew
+        chmod +x gradlew
 
     - name: Build Debug APK with Gradle
       run: ./gradlew :app:assembleDebug --stacktrace --no-daemon
