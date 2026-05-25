@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -33,9 +34,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -271,33 +274,45 @@ fun CalculatorInputCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .border(1.dp, borderCol, RoundedCornerShape(24.dp))
+            .border(1.dp, borderCol, RoundedCornerShape(16.dp))
             .testTag(testTag),
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = bgCol),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp)
+                .padding(horizontal = 14.dp, vertical = 10.dp)
         ) {
             Text(
-                text = label.uppercase(),
+                text = label,
                 color = labelCol,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
-                letterSpacing = 0.5.sp
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
             
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(2.dp))
             
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 2.dp),
+                contentAlignment = Alignment.CenterStart
             ) {
-                // Clear button inside card
-                TextField(
+                if (value.isEmpty()) {
+                    Text(
+                        text = "0",
+                        style = TextStyle(
+                            color = textCol.copy(alpha = 0.35f),
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    )
+                }
+                BasicTextField(
                     value = value,
                     onValueChange = { newValue ->
                         // Filter to keep only valid numeric characters and limit size to 15 to prevent freezes/ANRs
@@ -306,58 +321,29 @@ fun CalculatorInputCard(
                             onValueChange(filtered)
                         }
                     },
-                    modifier = Modifier.weight(1f),
-                    placeholder = {
-                        Text(
-                            text = "0",
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = textCol.copy(alpha = 0.4f)
-                        )
-                    },
+                    modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        disabledIndicatorColor = Color.Transparent,
-                        focusedTextColor = textCol,
-                        unfocusedTextColor = textCol
-                    ),
-                    textStyle = LocalTextStyle.current.copy(
-                        fontSize = 20.sp,
+                    textStyle = TextStyle(
+                        color = textCol,
+                        fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
-                    )
+                    ),
+                    cursorBrush = SolidColor(textCol)
                 )
-                
-                if (value.isNotEmpty()) {
-                    IconButton(
-                        onClick = { onValueChange("") },
-                        modifier = Modifier.size(24.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Clear,
-                            contentDescription = "ਸਾਫ਼",
-                            tint = textCol.copy(alpha = 0.6f),
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                }
             }
             
             if (subBadge != null && subBadge.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(2.dp))
                 Box(
                     modifier = Modifier
-                        .background(textCol.copy(alpha = 0.08f), RoundedCornerShape(8.dp))
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                        .background(textCol.copy(alpha = 0.08f), RoundedCornerShape(6.dp))
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
                 ) {
                     Text(
                         text = subBadge,
                         color = textCol,
-                        fontSize = 12.sp,
+                        fontSize = 10.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -487,7 +473,7 @@ fun RuralAreaCalculatorContent(viewModel: LandCalculatorViewModel, isDark: Boole
         
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             CalculatorInputCard(
-                label = "ਕਿੱਲਾ (Killa / Acre)",
+                label = "ਕਿੱਲਾ (KILLA)",
                 value = viewModel.rKilla,
                 onValueChange = { viewModel.onRuralValueChange("killa", it) },
                 lightBg = Color(0xFFe8f5e9),
@@ -500,7 +486,7 @@ fun RuralAreaCalculatorContent(viewModel: LandCalculatorViewModel, isDark: Boole
                 testTag = "rural_killa"
             )
             CalculatorInputCard(
-                label = "ਵਿੱਘਾ (Bigha)",
+                label = "ਵਿੱਘਾ (BIGHA)",
                 value = viewModel.rVigha,
                 onValueChange = { viewModel.onRuralValueChange("vigha", it) },
                 lightBg = Color(0xFFfff3e0),
@@ -518,7 +504,7 @@ fun RuralAreaCalculatorContent(viewModel: LandCalculatorViewModel, isDark: Boole
         
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             CalculatorInputCard(
-                label = "ਕਨਾਲ (Kanal)",
+                label = "ਕਨਾਲ (KANAL)",
                 value = viewModel.rKanal,
                 onValueChange = { viewModel.onRuralValueChange("kanal", it) },
                 lightBg = Color(0xFFe0f2f1),
@@ -531,7 +517,7 @@ fun RuralAreaCalculatorContent(viewModel: LandCalculatorViewModel, isDark: Boole
                 testTag = "rural_kanal"
             )
             CalculatorInputCard(
-                label = "ਮਰਲਾ (Marla)",
+                label = "ਮਰਲਾ (MARLA)",
                 value = viewModel.rMarla,
                 onValueChange = { viewModel.onRuralValueChange("marla", it) },
                 lightBg = Color(0xFFfffde7),
@@ -549,7 +535,7 @@ fun RuralAreaCalculatorContent(viewModel: LandCalculatorViewModel, isDark: Boole
         
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             CalculatorInputCard(
-                label = "ਗਜ (Gaj)",
+                label = "ਗਜ (GAJ)",
                 value = viewModel.rGaj,
                 onValueChange = { viewModel.onRuralValueChange("gaj", it) },
                 lightBg = Color(0xFFf3e5f5),
@@ -562,7 +548,7 @@ fun RuralAreaCalculatorContent(viewModel: LandCalculatorViewModel, isDark: Boole
                 testTag = "rural_gaj"
             )
             CalculatorInputCard(
-                label = "ਸਕੇਅਰ ਫੁੱਟ (Ft²)",
+                label = "ਸਕੇਅਰ ਫੁੱਟ (FT²)",
                 value = viewModel.rSqFt,
                 onValueChange = { viewModel.onRuralValueChange("sqFt", it) },
                 lightBg = Color(0xFFeef2ff),
@@ -580,7 +566,7 @@ fun RuralAreaCalculatorContent(viewModel: LandCalculatorViewModel, isDark: Boole
         
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             CalculatorInputCard(
-                label = "ਹੈਕਟੇਅਰ (Hectare)",
+                label = "ਹੈਕਟੇਅਰ (HECTARE)",
                 value = viewModel.rHectare,
                 onValueChange = { viewModel.onRuralValueChange("hectare", it) },
                 lightBg = Color(0xFFfce4ec),
@@ -610,7 +596,7 @@ fun RuralAreaCalculatorContent(viewModel: LandCalculatorViewModel, isDark: Boole
         Spacer(modifier = Modifier.height(12.dp))
         
         CalculatorInputCard(
-            label = "ਸਕੇਅਰ ਕਿ.ਮੀ. (Km²)",
+            label = "ਸਕੇਅਰ ਕਿ.ਮੀ. (KM²)",
             value = viewModel.rSqKm,
             onValueChange = { viewModel.onRuralValueChange("sqKm", it) },
             lightBg = Color(0xFFf1f5f9),
@@ -865,7 +851,7 @@ fun UrbanAreaCalculatorContent(viewModel: LandCalculatorViewModel, isDark: Boole
         
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             CalculatorInputCard(
-                label = "ਕਿੱਲਾ (Killa)",
+                label = "ਕਿੱਲਾ (KILLA)",
                 value = viewModel.uKilla,
                 onValueChange = { viewModel.onUrbanValueChange("killa", it) },
                 lightBg = Color(0xFFe8f5e9),
@@ -878,7 +864,7 @@ fun UrbanAreaCalculatorContent(viewModel: LandCalculatorViewModel, isDark: Boole
                 testTag = "urban_killa"
             )
             CalculatorInputCard(
-                label = "ਵਿੱਘਾ (Bigha)",
+                label = "ਵਿੱਘਾ (BIGHA)",
                 value = viewModel.uVigha,
                 onValueChange = { viewModel.onUrbanValueChange("vigha", it) },
                 lightBg = Color(0xFFfff3e0),
@@ -896,7 +882,7 @@ fun UrbanAreaCalculatorContent(viewModel: LandCalculatorViewModel, isDark: Boole
         
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             CalculatorInputCard(
-                label = "ਕਨਾਲ (Kanal)",
+                label = "ਕਨਾਲ (KANAL)",
                 value = viewModel.uKanal,
                 onValueChange = { viewModel.onUrbanValueChange("kanal", it) },
                 lightBg = Color(0xFFe0f2f1),
@@ -909,7 +895,7 @@ fun UrbanAreaCalculatorContent(viewModel: LandCalculatorViewModel, isDark: Boole
                 testTag = "urban_kanal"
             )
             CalculatorInputCard(
-                label = "ਮਰਲਾ (Marla)",
+                label = "ਮਰਲਾ (MARLA)",
                 value = viewModel.uMarla,
                 onValueChange = { viewModel.onUrbanValueChange("marla", it) },
                 lightBg = Color(0xFFfffde7),
@@ -927,7 +913,7 @@ fun UrbanAreaCalculatorContent(viewModel: LandCalculatorViewModel, isDark: Boole
         
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             CalculatorInputCard(
-                label = "ਗਜ (Gaj)",
+                label = "ਗਜ (GAJ)",
                 value = viewModel.uGaj,
                 onValueChange = { viewModel.onUrbanValueChange("gaj", it) },
                 lightBg = Color(0xFFf3e5f5),
@@ -940,7 +926,7 @@ fun UrbanAreaCalculatorContent(viewModel: LandCalculatorViewModel, isDark: Boole
                 testTag = "urban_gaj"
             )
             CalculatorInputCard(
-                label = "ਸਕੇਅਰ ਫੁੱਟ (Ft²)",
+                label = "ਸਕੇਅਰ ਫੁੱਟ (FT²)",
                 value = viewModel.uSqFt,
                 onValueChange = { viewModel.onUrbanValueChange("sqFt", it) },
                 lightBg = Color(0xFFeef2ff),
@@ -958,7 +944,7 @@ fun UrbanAreaCalculatorContent(viewModel: LandCalculatorViewModel, isDark: Boole
         
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             CalculatorInputCard(
-                label = "ਏਕੜ (Acre)",
+                label = "ਏਕੜ (ACRE)",
                 value = viewModel.uAcre,
                 onValueChange = { viewModel.onUrbanValueChange("acre", it) },
                 lightBg = Color(0xFFf5f3ff),
@@ -971,7 +957,7 @@ fun UrbanAreaCalculatorContent(viewModel: LandCalculatorViewModel, isDark: Boole
                 testTag = "urban_acre"
             )
             CalculatorInputCard(
-                label = "ਹੈਕਟੇਅਰ (Hectare)",
+                label = "ਹੈਕਟੇਅਰ (HECTARE)",
                 value = viewModel.uHectare,
                 onValueChange = { viewModel.onUrbanValueChange("hectare", it) },
                 lightBg = Color(0xFFfce4ec),
@@ -1002,7 +988,7 @@ fun UrbanAreaCalculatorContent(viewModel: LandCalculatorViewModel, isDark: Boole
                 testTag = "urban_sqMeter"
             )
             CalculatorInputCard(
-                label = "ਸਕੇਅਰ ਕਿ.ਮੀ. (Km²)",
+                label = "ਸਕੇਅਰ ਕਿ.ਮੀ. (KM²)",
                 value = viewModel.uSqKm,
                 onValueChange = { viewModel.onUrbanValueChange("sqKm", it) },
                 lightBg = Color(0xFFf1f5f9),
