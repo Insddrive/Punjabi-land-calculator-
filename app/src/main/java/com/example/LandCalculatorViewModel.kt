@@ -67,6 +67,20 @@ class LandCalculatorViewModel : ViewModel() {
         return trimmed.replace(",", "").toDoubleOrNull()
     }
 
+    private fun sanitizeInput(value: String, maxLen: Int = 15): String {
+        // Keep only digits, dots, and commas
+        val filtered = value.filter { it.isDigit() || it == '.' || it == ',' }
+        val dotIndex = filtered.indexOf('.')
+        val clean = if (dotIndex != -1) {
+            val before = filtered.substring(0, dotIndex + 1)
+            val after = filtered.substring(dotIndex + 1).replace(".", "")
+            before + after
+        } else {
+            filtered
+        }
+        return if (clean.length > maxLen) clean.substring(0, maxLen) else clean
+    }
+
     // ==========================================
     // RURAL STATE VARIABLES
     // ==========================================
@@ -96,16 +110,17 @@ class LandCalculatorViewModel : ViewModel() {
     var rTriError by mutableStateOf(false)
 
     fun onRuralValueChange(unit: String, value: String) {
+        val clean = sanitizeInput(value)
         when (unit) {
-            "killa" -> { rKilla = value; runRuralCalculation("killa", value) }
-            "vigha" -> { rVigha = value; runRuralCalculation("vigha", value) }
-            "kanal" -> { rKanal = value; runRuralCalculation("kanal", value) }
-            "marla" -> { rMarla = value; runRuralCalculation("marla", value) }
-            "gaj" -> { rGaj = value; runRuralCalculation("gaj", value) }
-            "sqFt" -> { rSqFt = value; runRuralCalculation("sqFt", value) }
-            "hectare" -> { rHectare = value; runRuralCalculation("hectare", value) }
-            "sqMeter" -> { rSqMeter = value; runRuralCalculation("sqMeter", value) }
-            "sqKm" -> { rSqKm = value; runRuralCalculation("sqKm", value) }
+            "killa" -> { rKilla = clean; runRuralCalculation("killa", clean) }
+            "vigha" -> { rVigha = clean; runRuralCalculation("vigha", clean) }
+            "kanal" -> { rKanal = clean; runRuralCalculation("kanal", clean) }
+            "marla" -> { rMarla = clean; runRuralCalculation("marla", clean) }
+            "gaj" -> { rGaj = clean; runRuralCalculation("gaj", clean) }
+            "sqFt" -> { rSqFt = clean; runRuralCalculation("sqFt", clean) }
+            "hectare" -> { rHectare = clean; runRuralCalculation("hectare", clean) }
+            "sqMeter" -> { rSqMeter = clean; runRuralCalculation("sqMeter", clean) }
+            "sqKm" -> { rSqKm = clean; runRuralCalculation("sqKm", clean) }
         }
     }
 
@@ -167,12 +182,14 @@ class LandCalculatorViewModel : ViewModel() {
     }
 
     fun onRuralDimensionChange(dimType: String, lengthVal: String, widthVal: String) {
+        val cleanLength = sanitizeInput(lengthVal)
+        val cleanWidth = sanitizeInput(widthVal)
         when (dimType) {
             "feet" -> {
-                rFeetLength = lengthVal
-                rFeetWidth = widthVal
-                val l = parseInput(lengthVal)
-                val w = parseInput(widthVal)
+                rFeetLength = cleanLength
+                rFeetWidth = cleanWidth
+                val l = parseInput(cleanLength)
+                val w = parseInput(cleanWidth)
                 if (l != null && w != null) {
                     val sqFt = l * w
                     updateAllRuralFields(sqFt, exclude = "")
@@ -183,10 +200,10 @@ class LandCalculatorViewModel : ViewModel() {
                 }
             }
             "meters" -> {
-                rMeterLength = lengthVal
-                rMeterWidth = widthVal
-                val l = parseInput(lengthVal)
-                val w = parseInput(widthVal)
+                rMeterLength = cleanLength
+                rMeterWidth = cleanWidth
+                val l = parseInput(cleanLength)
+                val w = parseInput(cleanWidth)
                 if (l != null && w != null) {
                     val lF = l * meterToFeet
                     val wF = w * meterToFeet
@@ -199,10 +216,10 @@ class LandCalculatorViewModel : ViewModel() {
                 }
             }
             "karams" -> {
-                rKaramLength = lengthVal
-                rKaramWidth = widthVal
-                val l = parseInput(lengthVal)
-                val w = parseInput(widthVal)
+                rKaramLength = cleanLength
+                rKaramWidth = cleanWidth
+                val l = parseInput(cleanLength)
+                val w = parseInput(cleanWidth)
                 if (l != null && w != null) {
                     val lF = l * 5.5
                     val wF = w * 5.5
@@ -243,15 +260,18 @@ class LandCalculatorViewModel : ViewModel() {
     }
 
     fun onRuralTriangleChange(a: String, b: String, c: String, unit: String = rTriUnit) {
-        rTriA = a
-        rTriB = b
-        rTriC = c
+        val cleanA = sanitizeInput(a)
+        val cleanB = sanitizeInput(b)
+        val cleanC = sanitizeInput(c)
+        rTriA = cleanA
+        rTriB = cleanB
+        rTriC = cleanC
         rTriUnit = unit
         clearRuralDimensions(exclude = "triangle")
 
-        val sideA = parseInput(a)
-        val sideB = parseInput(b)
-        val sideC = parseInput(c)
+        val sideA = parseInput(cleanA)
+        val sideB = parseInput(cleanB)
+        val sideC = parseInput(cleanC)
 
         if (sideA != null && sideB != null && sideC != null) {
             if (sideA + sideB > sideC && sideA + sideC > sideB && sideB + sideC > sideA) {
@@ -311,17 +331,18 @@ class LandCalculatorViewModel : ViewModel() {
     var uTriError by mutableStateOf(false)
 
     fun onUrbanValueChange(unit: String, value: String) {
+        val clean = sanitizeInput(value)
         when (unit) {
-            "killa" -> { uKilla = value; runUrbanCalculation("killa", value) }
-            "vigha" -> { uVigha = value; runUrbanCalculation("vigha", value) }
-            "kanal" -> { uKanal = value; runUrbanCalculation("kanal", value) }
-            "marla" -> { uMarla = value; runUrbanCalculation("marla", value) }
-            "gaj" -> { uGaj = value; runUrbanCalculation("gaj", value) }
-            "sqFt" -> { uSqFt = value; runUrbanCalculation("sqFt", value) }
-            "acre" -> { uAcre = value; runUrbanCalculation("acre", value) }
-            "hectare" -> { uHectare = value; runUrbanCalculation("hectare", value) }
-            "sqMeter" -> { uSqMeter = value; runUrbanCalculation("sqMeter", value) }
-            "sqKm" -> { uSqKm = value; runUrbanCalculation("sqKm", value) }
+            "killa" -> { uKilla = clean; runUrbanCalculation("killa", clean) }
+            "vigha" -> { uVigha = clean; runUrbanCalculation("vigha", clean) }
+            "kanal" -> { uKanal = clean; runUrbanCalculation("kanal", clean) }
+            "marla" -> { uMarla = clean; runUrbanCalculation("marla", clean) }
+            "gaj" -> { uGaj = clean; runUrbanCalculation("gaj", clean) }
+            "sqFt" -> { uSqFt = clean; runUrbanCalculation("sqFt", clean) }
+            "acre" -> { uAcre = clean; runUrbanCalculation("acre", clean) }
+            "hectare" -> { uHectare = clean; runUrbanCalculation("hectare", clean) }
+            "sqMeter" -> { uSqMeter = clean; runUrbanCalculation("sqMeter", clean) }
+            "sqKm" -> { uSqKm = clean; runUrbanCalculation("sqKm", clean) }
         }
     }
 
@@ -386,12 +407,14 @@ class LandCalculatorViewModel : ViewModel() {
     }
 
     fun onUrbanDimensionChange(dimType: String, lengthVal: String, widthVal: String) {
+        val cleanLength = sanitizeInput(lengthVal)
+        val cleanWidth = sanitizeInput(widthVal)
         when (dimType) {
             "feet" -> {
-                uFeetLength = lengthVal
-                uFeetWidth = widthVal
-                val l = parseInput(lengthVal)
-                val w = parseInput(widthVal)
+                uFeetLength = cleanLength
+                uFeetWidth = cleanWidth
+                val l = parseInput(cleanLength)
+                val w = parseInput(cleanWidth)
                 if (l != null && w != null) {
                     val sqFt = l * w
                     updateAllUrbanFields(sqFt, exclude = "")
@@ -402,10 +425,10 @@ class LandCalculatorViewModel : ViewModel() {
                 }
             }
             "meters" -> {
-                uMeterLength = lengthVal
-                uMeterWidth = widthVal
-                val l = parseInput(lengthVal)
-                val w = parseInput(widthVal)
+                uMeterLength = cleanLength
+                uMeterWidth = cleanWidth
+                val l = parseInput(cleanLength)
+                val w = parseInput(cleanWidth)
                 if (l != null && w != null) {
                     val lF = l * meterToFeet
                     val wF = w * meterToFeet
@@ -418,10 +441,10 @@ class LandCalculatorViewModel : ViewModel() {
                 }
             }
             "karams" -> {
-                uKaramLength = lengthVal
-                uKaramWidth = widthVal
-                val l = parseInput(lengthVal)
-                val w = parseInput(widthVal)
+                uKaramLength = cleanLength
+                uKaramWidth = cleanWidth
+                val l = parseInput(cleanLength)
+                val w = parseInput(cleanWidth)
                 if (l != null && w != null) {
                     val lF = l * 5.5
                     val wF = w * 5.5
@@ -462,15 +485,18 @@ class LandCalculatorViewModel : ViewModel() {
     }
 
     fun onUrbanTriangleChange(a: String, b: String, c: String, unit: String = uTriUnit) {
-        uTriA = a
-        uTriB = b
-        uTriC = c
+        val cleanA = sanitizeInput(a)
+        val cleanB = sanitizeInput(b)
+        val cleanC = sanitizeInput(c)
+        uTriA = cleanA
+        uTriB = cleanB
+        uTriC = cleanC
         uTriUnit = unit
         clearUrbanDimensions(exclude = "triangle")
 
-        val sideA = parseInput(a)
-        val sideB = parseInput(b)
-        val sideC = parseInput(c)
+        val sideA = parseInput(cleanA)
+        val sideB = parseInput(cleanB)
+        val sideC = parseInput(cleanC)
 
         if (sideA != null && sideB != null && sideC != null) {
             if (sideA + sideB > sideC && sideA + sideC > sideB && sideB + sideC > sideA) {
@@ -536,17 +562,18 @@ class LandCalculatorViewModel : ViewModel() {
     }
 
     fun onPriceValueChange(unit: String, value: String) {
+        val clean = sanitizeInput(value)
         when (unit) {
-            "killa" -> pKilla = value
-            "vigha" -> pVigha = value
-            "kanal" -> pKanal = value
-            "marla" -> pMarla = value
-            "gaj" -> pGaj = value
-            "sqFt" -> pSqFt = value
-            "sqMeter" -> pSqMeter = value
-            "sqKm" -> pSqKm = value
+            "killa" -> pKilla = clean
+            "vigha" -> pVigha = clean
+            "kanal" -> pKanal = clean
+            "marla" -> pMarla = clean
+            "gaj" -> pGaj = clean
+            "sqFt" -> pSqFt = clean
+            "sqMeter" -> pSqMeter = clean
+            "sqKm" -> pSqKm = clean
         }
-        runPriceCalculation(unit, value)
+        runPriceCalculation(unit, clean)
     }
 
     private fun runPriceCalculation(sourceUnit: String, value: String) {
@@ -621,11 +648,12 @@ class LandCalculatorViewModel : ViewModel() {
     var shareMarla by mutableStateOf("0")
 
     fun onDividerChange(field: String, value: String) {
+        val clean = sanitizeInput(value)
         when (field) {
-            "killa" -> divKilla = value
-            "kanal" -> divKanal = value
-            "marla" -> divMarla = value
-            "people" -> divPeople = value
+            "killa" -> divKilla = clean
+            "kanal" -> divKanal = clean
+            "marla" -> divMarla = clean
+            "people" -> divPeople = clean
         }
         calculateDivision()
     }
